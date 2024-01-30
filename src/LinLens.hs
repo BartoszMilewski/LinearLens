@@ -1,5 +1,6 @@
 {-# language LinearTypes #-}
 {-# language ScopedTypeVariables #-}
+module LinLens where
 import Prelude hiding ((.), id)
 
 -- Existential Linear Lens
@@ -57,8 +58,7 @@ toPLens (LinLensEx f g) pab = dimap f g (alpha pab)
 
 -- Point free derivation
 
-toLinLens2 :: forall s t a b.
-  LinLensEx a b s t -> LinLens s t a b
+toLinLens2 :: LinLensEx a b s t -> LinLens s t a b
 toLinLens2 (LinLensEx f g) = first ((g .) . eta) . f
 
 -- Monoidal category
@@ -69,7 +69,7 @@ toLinLens2 (LinLensEx f g) = first ((g .) . eta) . f
 id :: a %1-> a
 id a = a
 
--- Linear bimap
+-- Functor CxC->C in a closed monoidal category
 class Bifunctor p where
     bimap :: (a %1-> a') %1-> (b %1-> b') %1-> p a b %1-> p a' b'
     first :: (a %1-> a') %1-> p a b %1-> p a' b
@@ -79,6 +79,7 @@ class Bifunctor p where
 
 -- The tensor product in a monoidal category is a bifunctor
 instance Bifunctor (,) where
+    bimap :: (a %1 -> a') %1-> (b %1 -> b') %1-> (a, b) %1-> (a', b')
     bimap f g (a, b) = (f a, g b)
 
 -- The structure maps of a monoidal category
@@ -99,19 +100,24 @@ unrunit a = (a, ())
 
 -- Closed monoidal category 
 
-curry :: ((x, y) %1-> z) -> (x %1-> (y %1-> z))
+curry :: ((x, y) %1-> z) %1-> (x %1-> (y %1-> z))
 curry f x y = f (x, y)
 
-uncurry :: (x %1-> (y %1-> z)) -> ((x, y) %1-> z)
+uncurry :: (x %1-> (y %1-> z)) %1-> ((x, y) %1-> z)
 uncurry f (x, y) = f x y 
 
 -- unit of the currying adjunction
-eta :: x %1-> y %1-> (x, y)
-eta x y = (x, y)
+eta :: a %1-> b %1-> (a, b)
+eta a b = (a, b)
 
 -- counit of the currying adjunction
-apply :: (a %1-> b, a) -> b
+apply :: (a %1-> b, a) %1-> b
 apply (f, a) = f a
+
+newtype Hom a b = Hom (a %1-> b)
+
+instance Profunctor Hom where
+  dimap f g (Hom h) = Hom (g . h . f)
 
 main :: IO ()
 main = return ()

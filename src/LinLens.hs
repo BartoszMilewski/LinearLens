@@ -100,10 +100,10 @@ unrunit a = (a, ())
 
 -- Closed monoidal category 
 
-curry :: ((x, y) %1-> z) %1-> (x %1-> (y %1-> z))
+curry :: ((a, b) %1-> c) %1-> (a %1-> (b %1-> c))
 curry f x y = f (x, y)
 
-uncurry :: (x %1-> (y %1-> z)) %1-> ((x, y) %1-> z)
+uncurry :: (a %1-> (b %1-> c)) %1-> ((a, b) %1-> c)
 uncurry f (x, y) = f x y 
 
 -- unit of the currying adjunction

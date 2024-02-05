@@ -1,7 +1,7 @@
 {-# language LinearTypes #-}
 {-# language ScopedTypeVariables #-}
 module LinLens where
-import Prelude hiding ((.), id)
+import Prelude hiding ((.), id, Functor, fmap)
 
 -- Existential Linear Lens
 data LinLensEx a b s t where
@@ -61,6 +61,26 @@ toPLens (LinLensEx f g) pab = dimap f g (alpha pab)
 toLinLens2 :: LinLensEx a b s t -> LinLens s t a b
 toLinLens2 (LinLensEx f g) = first ((g .) . eta) . f
 
+-- van Laarhoven representation
+
+type VLL s t a b = forall f. Functor f => 
+    (a %1-> f b) -> (s %1-> f t)
+
+toVLL :: LinLens s t a b -> VLL s t a b
+toVLL lns f = fmap apply . strength . second f . lns
+
+fromVLL :: forall s t a b. VLL s t a b -> LinLens s t a b
+fromVLL vll s = unF (vll (F id) s)
+
+data F a b x where
+   F :: (b %1-> x) %1-> a %1-> F a b x
+
+unF :: F a b x %1-> (b %1-> x, a)
+unF (F bx a) = (bx, a)
+
+instance Functor (F a b) where
+  fmap f (F bx a) = F (f . bx) a
+
 -- Monoidal category
 -- Composition
 (.) :: (b %1 -> c) %1 -> (a %1 -> b) %1 -> a %1 -> c
@@ -68,6 +88,13 @@ toLinLens2 (LinLensEx f g) = first ((g .) . eta) . f
 -- Identity
 id :: a %1-> a
 id a = a
+
+class Functor f where
+  fmap :: (a %1-> b) %1-> f a %1-> f b
+
+strength :: Functor f => (a, f b) %1-> f (a, b)
+strength (a, fb) = fmap (eta a) fb
+
 
 -- Functor CxC->C in a closed monoidal category
 class Bifunctor p where
@@ -97,6 +124,9 @@ runit :: (a, ()) %1-> a
 runit (a, ()) = a
 unrunit :: a %1-> (a, ())
 unrunit a = (a, ())
+
+swap :: (a, b) %1-> (b, a)
+swap (a, b) = (b, a)
 
 -- Closed monoidal category 
 
